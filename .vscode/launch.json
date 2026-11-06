@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Run Live Demo (demo.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/1_implementation/demo.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: Run Full Experiments & Plots (run_experiments.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/1_implementation/run_experiments.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Newman's Greedy Modularity Optimization - Class Presentation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .slide-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 60px;
+    }
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1150px;
+      height: 85vh;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 40px 50px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeIn 0.3s ease-in-out;
+      overflow-y: auto;
+    }
+    .slide.active { display: flex; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      background: #3b82f6;
+      color: white;
+    }
+    h1 { font-size: 2.4rem; color: #f8fafc; margin-bottom: 16px; font-weight: 700; }
+    h2 { font-size: 1.8rem; color: #60a5fa; margin-bottom: 20px; font-weight: 600; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+    p, li { font-size: 1.15rem; line-height: 1.6; color: #cbd5e1; }
+    ul { margin-left: 28px; margin-top: 10px; margin-bottom: 15px; }
+    li { margin-bottom: 10px; }
+    .highlight { color: #38bdf8; font-weight: 600; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 15px;
+    }
+    .math-block {
+      background: #090d16;
+      border-left: 4px solid #38bdf8;
+      padding: 15px 20px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1.15rem;
+      color: #7dd3fc;
+      border-radius: 4px;
+      margin: 15px 0;
+    }
+    img.slide-img {
+      max-width: 100%;
+      max-height: 52vh;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      display: block;
+      margin: 10px auto;
+      background: #ffffff;
+      padding: 6px;
+    }
+    .speaker-notes {
+      background: rgba(30, 41, 59, 0.95);
+      border-top: 2px solid #38bdf8;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      color: #94a3b8;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .speaker-notes strong { color: #38bdf8; }
+    /* Bottom bar */
+    .controls {
+      height: 60px;
+      background: #0f172a;
+      border-top: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+    }
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .progress-text { font-size: 1rem; color: #94a3b8; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <div class="slide-container">
+
+    <!-- SLIDE 1: TITLE -->
+    <div class="slide active">
+      <div>
+        <span class="badge">Class Presentation</span>
+        <h1>Newman's Greedy Optimization of Modularity</h1>
+        <p style="font-size: 1.4rem; color: #94a3b8; margin-bottom: 25px;">
+          Agglomerative Community Detection (Newman 2004) & Clauset–Newman–Moore Speedup
+        </p>
+        <div class="card" style="margin-top: 30px;">
+          <p><strong>Topic:</strong> Complex Network Analysis & Community Structure Detection</p>
+          <p><strong>Core Formulation:</strong> Modularity $Q$, Edge Matrix $e_{ij}$, Degree Fractions $a_i$, and $\Delta Q = 2(e_{ij} - a_i a_j)$</p>
+          <p><strong>Experimental Benchmarks:</strong> 6-Node Bridge Toy Graph & Zachary's Karate Club</p>
+          <p><strong>Evaluation Status:</strong> 100% Exact Verification with NetworkX Reference</p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "Good morning Professor and classmates. Today I will present Newman’s Greedy Modularity Optimization algorithm for community detection in networks, explaining how modularity is maximized agglomeratively, and how Clauset, Newman, and Moore later achieved near-linear scaling."
+      </div>
+    </div>
+
+    <!-- SLIDE 2: WHAT IS MODULARITY -->
+    <div class="slide">
+      <div>
+        <span class="badge">Theoretical Background</span>
+        <h2>1. What is Modularity ($Q$)?</h2>
+        <p>Modularity measures the density of edges inside communities compared to what would be expected by pure random chance:</p>
+        
+        <div class="math-block">
+          Q = &sum; [ (L_c / m) - (k_c / 2m)&sup2; ] = &sum; (e_ii - a_i&sup2;)
+        </div>
+
+        <ul>
+          <li><span class="highlight">m:</span> Total number of edges in the network.</li>
+          <li><span class="highlight">L_c / m:</span> Fraction of edges that fall strictly inside community c.</li>
+          <li><span class="highlight">(k_c / 2m)&sup2;:</span> Expected fraction of edges if edges were placed at random preserving degree sequence.</li>
+          <li><span class="highlight">Significance:</span> $Q > 0$ implies significant community structure (typical real-world graphs have $Q \in [0.3, 0.7]$). If $Q \le 0$, the network behaves as random noise or bipartite structure.</li>
+        </ul>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "Modularity quantifies whether a partition has more internal connections than a random null model. A high Q means genuine community cohesion."
+      </div>
+    </div>
+
+    <!-- SLIDE 3: MATHEMATICAL DERIVATION -->
+    <div class="slide">
+      <div>
+        <span class="badge">Mathematical Derivation</span>
+        <h2>2. Derivation of &Delta;Q = 2(e_ij - a_i a_j)</h2>
+        <p>When merging two communities $i$ and $j$ into a merged community $k = i \cup j$:</p>
+
+        <div class="card">
+          <p>1. <strong>Internal edge fraction:</strong> $e_{kk} = e_{ii} + e_{jj} + 2 e_{ij}$</p>
+          <p>2. <strong>Degree fraction:</strong> $a_k = a_i + a_j$</p>
+          <p>3. <strong>New contribution:</strong> $e_{kk} - a_k^2 = (e_{ii} + e_{jj} + 2e_{ij}) - (a_i + a_j)^2$</p>
+          <p>4. <strong>Old contribution:</strong> $(e_{ii} - a_i^2) + (e_{jj} - a_j^2)$</p>
+        </div>
+
+        <div class="math-block">
+          &Delta;Q = [New] - [Old] = 2(e_ij - a_i * a_j)
+        </div>
+
+        <p><span class="highlight">Key Insight:</span> If $e_{ij} = 0$ (no edge between communities), $\Delta Q = -2 a_i a_j \le 0$. Hence, the greedy algorithm <strong>only needs to test pairs connected by at least one edge!</strong></p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "Notice that when two communities share no edges, delta Q is strictly negative. This proves mathematically why we only evaluate connected pairs, dramatically pruning search space."
+      </div>
+    </div>
+
+    <!-- SLIDE 4: THE ALGORITHM WORKFLOW -->
+    <div class="slide">
+      <div>
+        <span class="badge">Implementation Workflow</span>
+        <h2>3. Newman's Agglomerative Algorithm Steps</h2>
+        <div class="grid-2">
+          <div>
+            <ul>
+              <li><strong>Step 1 (Start):</strong> Every vertex is its own community ($n$ communities). $e_{ij} = A_{ij}/2m$, $e_{ii} = 0$, $a_i = k_i / 2m$.</li>
+              <li><strong>Step 2 (Greedy Choice):</strong> Compute $\Delta Q$ for all active connected pairs. Find pair $(i^*, j^*)$ that maximizes $\Delta Q$.</li>
+              <li><strong>Step 3 (Matrix Updates):</strong>
+                <br>&bull; $e_{ii} \leftarrow e_{ii} + e_{jj} + 2e_{ij}$
+                <br>&bull; $e_{ik} \leftarrow e_{ik} + e_{jk}$ for all $k$
+                <br>&bull; $a_i \leftarrow a_i + a_j$
+              </li>
+              <li><strong>Step 4 (Repeat):</strong> Repeat $n-1$ times until 1 single community remains ($Q = 0$).</li>
+              <li><strong>Step 5 (Optimal Cut):</strong> Select the partition corresponding to peak $Q^*$.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="color: #38bdf8; margin-bottom: 10px;">Complexity Analysis</h3>
+            <p><strong>Newman (2004):</strong></p>
+            <p>&bull; $n-1$ merge steps</p>
+            <p>&bull; Edge scan: $O(m)$ per step</p>
+            <p>&bull; Row updates: $O(n)$ per step</p>
+            <p>&bull; <strong>Total Time:</strong> $O((m+n)n) \approx \mathbf{O(n^2)}$ on sparse graphs.</p>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "The algorithm builds a complete agglomerative dendrogram. We record modularity at each step and cut the dendrogram at the highest point of Q."
+      </div>
+    </div>
+
+    <!-- SLIDE 5: 6-NODE TOY GRAPH -->
+    <div class="slide">
+      <div>
+        <span class="badge">Experimental Results</span>
+        <h2>4. Benchmark 1: 6-Node Toy Graph (Two Triangles + Bridge)</h2>
+        <div class="grid-2">
+          <div>
+            <p><strong>Graph:</strong> 6 nodes, 7 edges. Two triangles $\{0,1,2\}$ and $\{3,4,5\}$ connected by bridge $(2,3)$.</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem;">
+              <tr style="border-bottom: 1px solid #475569; color: #94a3b8;">
+                <th style="padding: 6px; text-align: left;">Step</th>
+                <th style="padding: 6px;">Merged</th>
+                <th style="padding: 6px;">&Delta;Q</th>
+                <th style="padding: 6px;">Modularity Q</th>
+              </tr>
+              <tr><td style="padding: 5px;">0</td><td>Initial</td><td>-</td><td>-0.1735</td></tr>
+              <tr><td style="padding: 5px;">1</td><td>[0] + [1]</td><td>+0.1020</td><td>-0.0714</td></tr>
+              <tr><td style="padding: 5px;">2</td><td>[0,1] + [2]</td><td>+0.1633</td><td>+0.0918</td></tr>
+              <tr><td style="padding: 5px;">3</td><td>[4] + [5]</td><td>+0.1020</td><td>+0.1939</td></tr>
+              <tr style="background: rgba(56, 189, 248, 0.2); font-weight: bold; color: #38bdf8;">
+                <td style="padding: 5px;">4</td><td>[3] + [4,5]</td><td>+0.1633</td><td>+0.3571 (Peak)</td>
+              </tr>
+              <tr><td style="padding: 5px;">5</td><td>Bridge merge</td><td>-0.3571</td><td>0.0000</td></tr>
+            </table>
+            <p style="margin-top: 15px;"><span class="highlight">Result:</span> Peak $Q^* = 0.3571$ with 2 communities $\{0,1,2\}$ and $\{3,4,5\}$. Matches NetworkX identically!</p>
+          </div>
+          <div>
+            <img class="slide-img" src="images/toy_graph_modularity.png" alt="Toy Graph Modularity Curve">
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "On the 6-node toy graph, the curve peaks at step 4 where the two triangles are separated. When step 5 merges across the bridge, Q drops abruptly back to 0."
+      </div>
+    </div>
+
+    <!-- SLIDE 6: ZACHARY'S KARATE CLUB -->
+    <div class="slide">
+      <div>
+        <span class="badge">Experimental Results</span>
+        <h2>5. Benchmark 2: Zachary's Karate Club (34 Nodes, 78 Edges)</h2>
+        <div class="grid-2">
+          <div>
+            <p><strong>Classic Complex Network:</strong> Real-world social network of 34 members.</p>
+            <ul>
+              <li><strong>Initial $Q_0$:</strong> -0.0498 (34 communities)</li>
+              <li><strong>Peak Step 31:</strong> $Q^* = \mathbf{0.38067}$ with <strong>3 communities</strong>:
+                <br>&bull; Comm 1 (17 nodes): Officer faction `[8, 14, 15, 18, 20, 22-33]`
+                <br>&bull; Comm 2 (9 nodes): Mr. Hi inner core `[1, 2, 3, 7, 9, 12, 13, 17, 21]`
+                <br>&bull; Comm 3 (8 nodes): Mr. Hi outer circle `[0, 4, 5, 6, 10, 11, 16, 19]`
+              </li>
+              <li><strong>Step 32:</strong> Merging Mr. Hi's groups drops $Q$ to $0.3718$.</li>
+              <li><strong>Step 33:</strong> Single group yields $Q = 0.0000$.</li>
+            </ul>
+          </div>
+          <div>
+            <img class="slide-img" src="images/karate_modularity.png" alt="Karate Club Modularity Curve">
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "For Zachary's Karate Club, Q rises steadily through 31 merges, reaching a maximum of 0.38067 with 3 communities. This exactly reproduces Newman's 2004 published findings."
+      </div>
+    </div>
+
+    <!-- SLIDE 7: NETWORK VISUALIZATION -->
+    <div class="slide">
+      <div>
+        <span class="badge">Visual Validation</span>
+        <h2>6. Community Partitions Visualized</h2>
+        <img class="slide-img" src="images/network_communities_visualization.png" alt="Network Communities Visualization" style="max-height: 58vh;">
+        <p style="text-align: center; margin-top: 10px; color: #94a3b8;">
+          Left: Toy graph resolved into 2 triangles. Right: Karate Club resolved into 3 structurally dense communities.
+        </p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "Here we see the graphical rendering. Notice how modularity accurately segments dense subgraphs while leaving cross-cutting bridge edges between them."
+      </div>
+    </div>
+
+    <!-- SLIDE 8: COMPARISON WITH NETWORKX -->
+    <div class="slide">
+      <div>
+        <span class="badge">Verification & Benchmarking</span>
+        <h2>7. Comparison with NetworkX greedy_modularity_communities</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 1.05rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid #60a5fa; color: #60a5fa; text-align: left;">
+              <th style="padding: 10px;">Metric / Test</th>
+              <th style="padding: 10px;">Our From-Scratch Implementation</th>
+              <th style="padding: 10px;">NetworkX Reference</th>
+              <th style="padding: 10px;">Agreement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #334155;">
+              <td style="padding: 10px;"><strong>Toy Graph Partition</strong></td>
+              <td style="padding: 10px;">`[[0,1,2], [3,4,5]]`</td>
+              <td style="padding: 10px;">`[[0,1,2], [3,4,5]]`</td>
+              <td style="padding: 10px; color: #4ade80;">100% Exact Match</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #334155;">
+              <td style="padding: 10px;"><strong>Toy Graph Modularity Q</strong></td>
+              <td style="padding: 10px;">0.357142857</td>
+              <td style="padding: 10px;">0.357142857</td>
+              <td style="padding: 10px; color: #4ade80;">100% Exact Match</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #334155;">
+              <td style="padding: 10px;"><strong>Karate Club Partition</strong></td>
+              <td style="padding: 10px;">3 communities (8, 9, 17 nodes)</td>
+              <td style="padding: 10px;">3 communities (8, 9, 17 nodes)</td>
+              <td style="padding: 10px; color: #4ade80;">100% Exact Match</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #334155;">
+              <td style="padding: 10px;"><strong>Karate Club Q (Unweighted)</strong></td>
+              <td style="padding: 10px;">0.380670611</td>
+              <td style="padding: 10px;">0.380670611</td>
+              <td style="padding: 10px; color: #4ade80;">100% Exact Match</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 20px; font-size: 1.05rem;">
+          <span class="highlight">Note on Edge Weights:</span> NetworkX includes edge weights by default (`weight='weight'`, giving $Q=0.4345$). With `weight=None` (unweighted canonical Newman 2004), NetworkX matches our from-scratch implementation down to all decimal digits!
+        </p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "Both the toy graph and the Karate club partitions match NetworkX's greedy_modularity_communities with 100% precision."
+      </div>
+    </div>
+
+    <!-- SLIDE 9: CNM SPEEDUP -->
+    <div class="slide">
+      <div>
+        <span class="badge">Advanced Optimization</span>
+        <h2>8. The Clauset–Newman–Moore (CNM 2004) Speedup</h2>
+        <div class="card">
+          <p>Newman's 2004 algorithm requires $O(m)$ work at each step to find $\max \Delta Q$, totaling $O(n^2)$ time on sparse graphs. Clauset, Newman, and Moore (2004) solved this bottleneck using three data structures:</p>
+          <ul style="margin-top: 10px;">
+            <li><strong>Sparse $\Delta Q$ Matrix:</strong> Only maintain $\Delta Q_{ij}$ for adjacent communities.</li>
+            <li><strong>Row Max-Heaps:</strong> Each community $i$ maintains a max-heap of its neighbors, storing row maximum $M_i$.</li>
+            <li><strong>Global Max-Heap:</strong> Stores the largest $M_i$ across all communities. Finding the global best pair takes <strong>$O(1)$</strong> time!</li>
+          </ul>
+        </div>
+        <div class="math-block">
+          Direct &Delta;Q updates: &Delta;Q'_{jk} = &Delta;Q_{jk} + &Delta;Q_{ik} (common neighbor)
+        </div>
+        <p><span class="highlight">Complexity Improvement:</span> Heap updates take $O(\log n)$ per neighbor, reducing overall time complexity from $\mathbf{O(n^2)}$ down to $\mathbf{O(m \cdot d \log n) \approx O(n \log^2 n)}$, allowing analysis of networks with millions of vertices!</p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "CNM replaces the exhaustive matrix search with max-heaps. The search becomes O(1) and updates become logarithmic, which allowed community detection to scale to millions of nodes."
+      </div>
+    </div>
+
+    <!-- SLIDE 10: CONCLUSION -->
+    <div class="slide">
+      <div>
+        <span class="badge">Conclusion & Summary</span>
+        <h2>9. Key Takeaways & Project Summary</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="color: #38bdf8; margin-bottom: 10px;">What We Accomplished</h3>
+            <p>&check; Implemented Newman's greedy modularity optimization from scratch.</p>
+            <p>&check; Tested and validated on 6-node toy graph and Zachary's Karate Club.</p>
+            <p>&check; Achieved 100% exact numerical match with NetworkX reference.</p>
+            <p>&check; Generated publication-quality modularity curves and network plots.</p>
+            <p>&check; Derived mathematical proof of $\Delta Q = 2(e_{ij} - a_i a_j)$.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: #38bdf8; margin-bottom: 10px;">Practical Insights</h3>
+            <p>&bull; Modularity is an intuitive, degree-normalized clustering metric.</p>
+            <p>&bull; Pruning disconnected pairs ($e_{ij} = 0$) makes agglomeration fast.</p>
+            <p>&bull; Clauset–Newman–Moore's heap formulation provides near-linear scalability.</p>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: 30px; font-size: 1.3rem; color: #60a5fa; font-weight: bold;">
+          Thank you! Ready for Questions & Answers.
+        </p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Speaker Note:</strong> "In conclusion, we have built and verified Newman's algorithm from first principles. Thank you, and I look forward to your questions."
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn" onclick="prevSlide()">&larr; Previous Slide (Left Arrow)</button>
+    <div class="progress-text" id="slideProgress">Slide 1 of 10</div>
+    <button class="btn" onclick="nextSlide()">Next Slide (Right Arrow) &rarr;</button>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    let currentSlide = 0;
+
+    function showSlide(index) {
+      slides.forEach((s, i) => {
+        s.classList.toggle('active', i === index);
+      });
+      document.getElementById('slideProgress').innerText = `Slide ${index + 1} of ${slides.length}`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        showSlide(currentSlide);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        showSlide(currentSlide);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        prevSlide();
+      } else if (e.key.toLowerCase() === 'f') {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
